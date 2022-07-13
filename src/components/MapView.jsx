@@ -52,7 +52,7 @@ function makeIcon(i, n) {
   }
 }
 
-const EventMap = (props) => {
+const EventMap = () => {
   const map = useMap();
 
   const profileRoutes = {
@@ -61,14 +61,47 @@ const EventMap = (props) => {
     car: "routed-car",
   };
 
-  console.log(props.startLatLng, props.destLatLng);
-
   const [profile, setProfile] = useState("car");
+  const [startLatLng, setStartLatLng] = useState(null);
+  const [destLatLng, setDestLatLng] = useState(null);
+
+  const zoomIn = (e) => {
+    console.log(e);
+    map.zoomIn();
+  };
+
+  const zoomOut = () => {
+    map.zoomOut();
+  };
+
+  const setStart = (e) => {
+    setStartLatLng(L.latLng(e.latlng.lat, e.latlng.lng));
+  };
+
+  const setDest = (e) => {
+    setDestLatLng(L.latLng(e.latlng.lat, e.latlng.lng));
+  };
+
+  const contextMenuItems = [
+    {
+      text: "Zoom In",
+      callback: zoomIn,
+    },
+    {
+      text: "Zoom Out",
+      callback: zoomOut,
+    },
+    {
+      text: "Direct from here",
+      callback: setStart,
+    },
+    { text: "Direct to here", callback: setDest },
+  ];
 
   useEffect(() => {
     console.log("Re-render");
     const routeControl = L.Routing.control({
-      waypoints: [props.startLatLng, props.destLatLng],
+      waypoints: [startLatLng, destLatLng],
 
       routeWhileDragging: true,
       lineOptions: {
@@ -111,6 +144,7 @@ const EventMap = (props) => {
         }
       },
       addWaypoints: false,
+      routeDragInterval: 200,
 
       createMarker: function (i, start, n) {
         let marker = L.marker(start.latLng, {
@@ -135,8 +169,15 @@ const EventMap = (props) => {
 
     L.control.scale().addTo(map);
 
-    return () => map.removeControl(routeControl);
-  }, [profile, props.startLatLng, props.destLatLng]);
+    contextMenuItems.forEach((item) => {
+      map.contextmenu.addItem(item);
+    });
+
+    return () => {
+      map.removeControl(routeControl);
+      map.contextmenu.removeAllItems();
+    };
+  }, [profile, startLatLng, destLatLng]);
 
   return <Profile profile={profile} setProfile={setProfile} />;
 };
@@ -165,26 +206,6 @@ const Profile = (props) => {
 const MapView = () => {
   const map = useRef();
 
-  const [startLatLng, setStartLatLng] = useState(null);
-  const [destLatLng, setDestLatLng] = useState(null);
-
-  const zoomIn = (e) => {
-    console.log(e);
-    map.current.zoomIn();
-  };
-
-  const zoomOut = () => {
-    map.current.zoomOut();
-  };
-
-  const setStart = (e) => {
-    setStartLatLng(L.latLng(e.latlng.lat, e.latlng.lng));
-  };
-
-  const setDest = (e) => {
-    setDestLatLng(L.latLng(e.latlng.lat, e.latlng.lng));
-  };
-
   return (
     <MapContainer
       className="markercluster-map"
@@ -192,13 +213,6 @@ const MapView = () => {
       zoom={13}
       maxZoom={18}
       contextmenu={true}
-      contextmenuItems={[
-        {
-          text: "Direct from here",
-          callback: setStart,
-        },
-        { text: "Direct to here", callback: setDest },
-      ]}
       ref={map}
     >
       <TileLayer
@@ -206,7 +220,7 @@ const MapView = () => {
         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       />
 
-      <EventMap startLatLng={startLatLng} destLatLng={destLatLng} />
+      <EventMap />
     </MapContainer>
   );
 };
