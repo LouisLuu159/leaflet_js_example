@@ -145,7 +145,7 @@ const EventMap = () => {
       },
       addWaypoints: false,
       routeDragInterval: 200,
-
+      reverseWaypoints: true,
       createMarker: function (i, start, n) {
         let marker = L.marker(start.latLng, {
           draggable: true,
